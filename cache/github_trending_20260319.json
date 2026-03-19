@@ -1,0 +1,111 @@
+{
+  "cache_date": "20260319",
+  "created_at": "2026-03-19T22:10:06.422598",
+  "repositories": [
+    {
+      "rank": 1,
+      "name": "opendataloader-project/opendataloader-pdf",
+      "url": "https://github.com/opendataloader-project/opendataloader-pdf",
+      "description": "PDF Parser for AI-ready data. Automate PDF accessibility. Open-source.",
+      "language": "Java",
+      "stars_today": "1,394 stars today",
+      "total_stars": "4,950",
+      "zread_link": "https://zread.ai/opendataloader-project/opendataloader-pdf"
+    },
+    {
+      "rank": 2,
+      "name": "langchain-ai/open-swe",
+      "url": "https://github.com/langchain-ai/open-swe",
+      "description": "An Open-Source Asynchronous Coding Agent",
+      "language": "Python",
+      "stars_today": "955 stars today",
+      "total_stars": "6,810",
+      "zread_link": "https://zread.ai/langchain-ai/open-swe"
+    },
+    {
+      "rank": 3,
+      "name": "obra/superpowers",
+      "url": "https://github.com/obra/superpowers",
+      "description": "An agentic skills framework & software development methodology that works.",
+      "language": "Shell",
+      "stars_today": "3,476 stars today",
+      "total_stars": "98,223",
+      "zread_link": "https://zread.ai/obra/superpowers"
+    },
+    {
+      "rank": 4,
+      "name": "jarrodwatts/claude-hud",
+      "url": "https://github.com/jarrodwatts/claude-hud",
+      "description": "A Claude Code plugin that shows what's happening - context usage, active tools, running agents, and todo progress",
+      "language": "JavaScript",
+      "stars_today": "1,851 stars today",
+      "total_stars": "8,113",
+      "zread_link": "https://zread.ai/jarrodwatts/claude-hud"
+    },
+    {
+      "rank": 5,
+      "name": "unslothai/unsloth",
+      "url": "https://github.com/unslothai/unsloth",
+      "description": "Unified web UI for training and running open models like Qwen, DeepSeek, gpt-oss and Gemma locally.",
+      "language": "Python",
+      "stars_today": "1,259 stars today",
+      "total_stars": "56,405",
+      "zread_link": "https://zread.ai/unslothai/unsloth"
+    },
+    {
+      "rank": 6,
+      "name": "mobile-dev-inc/Maestro",
+      "url": "https://github.com/mobile-dev-inc/Maestro",
+      "description": "Painless E2E Automation for Mobile and Web",
+      "language": "Kotlin",
+      "stars_today": "469 stars today",
+      "total_stars": "12,227",
+      "zread_link": "https://zread.ai/mobile-dev-inc/Maestro"
+    },
+    {
+      "rank": 7,
+      "name": "newton-physics/newton",
+      "url": "https://github.com/newton-physics/newton",
+      "description": "An open-source, GPU-accelerated physics simulation engine built upon NVIDIA Warp, specifically targeting roboticists and simulation researchers.",
+      "language": "Python",
+      "stars_today": "345 stars today",
+      "total_stars": "3,109",
+      "zread_link": "https://zread.ai/newton-physics/newton"
+    },
+    {
+      "rank": 8,
+      "name": "louis-e/arnis",
+      "url": "https://github.com/louis-e/arnis",
+      "description": "Generate any location from the real world in Minecraft with a high level of detail.",
+      "language": "Rust",
+      "stars_today": "918 stars today",
+      "total_stars": "10,304",
+      "zread_link": "https://zread.ai/louis-e/arnis"
+    },
+    {
+      "rank": 9,
+      "name": "FujiwaraChoki/MoneyPrinterV2",
+      "url": "https://github.com/FujiwaraChoki/MoneyPrinterV2",
+      "description": "Automate the process of making money online.",
+      "language": "Python",
+      "stars_today": "560 stars today",
+      "total_stars": "15,772",
+      "zread_link": "https://zread.ai/FujiwaraChoki/MoneyPrinterV2"
+    },
+    {
+      "rank": 10,
+      "name": "gsd-build/get-shit-done",
+      "url": "https://github.com/gsd-build/get-shit-done",
+      "description": "A light-weight and powerful meta-prompting, context engineering and spec-driven development system for Claude Code by TÂCHES.",
+      "language": "JavaScript",
+      "stars_today": "1,414 stars today",
+      "total_stars": "35,500",
+      "zread_link": "https://zread.ai/gsd-build/get-shit-done"
+    }
+  ],
+  "metadata": {
+    "language": "",
+    "since": "daily",
+    "top_k": 10
+  }
+}

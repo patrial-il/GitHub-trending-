@@ -1,203 +1,302 @@
-# GitHub Trending 邮件推送程序
+# GitHub Trending 邮件订阅系统
 
-这个程序会自动获取 GitHub 上最新的趋势项目，并通过电子邮件发送给您。
+自动爬取 GitHub Trending 仓库，生成美观的 HTML 页面，并定时发送到指定邮箱。
 
-现在还新增了一个基于 Dify 的入口，可以将 **Dify Workflow 生成的 HTML 报告**（例如「GitHub Trending + 抖音热点 + NLP 总结」）作为邮件正文发送。
+## 功能特点
 
-## 功能特性
+- 🔥 **自动爬取** - 每日自动获取 GitHub Trending 仓库信息
+- 📱 **移动端优化** - 生成的 HTML 完美适配手机和邮件客户端
+- 📧 **邮件发送** - 支持 SMTP 发送，HTML 直接嵌入邮件正文
+- 💾 **智能缓存** - 按天缓存数据，避免重复请求
+- ⏰ **定时任务** - 支持 Windows/Linux 定时自动执行
+- 🎨 **深色主题** - 采用 GitHub 风格深色主题
 
-- 自动获取 GitHub Trending 项目（本地爬取版）
-- 基于 Dify Workflow 的 HTML 报告发送（推荐用于「GitHub Trending + 抖音热点 + NLP 总结」）
-- 美观的 HTML 邮件格式
-- 支持定时推送
-- 显示项目名称、描述、编程语言、星标数和派生数（本地 GitHub 版本）
-- 自动检测邮箱提供商并使用相应SMTP服务器
-- 完整的日志记录系统
-- 改进的错误处理和重试机制
-- 支持 requests 库和 BeautifulSoup 进行更可靠的HTML解析
-- 数据缓存机制，减少重复请求
-- 配置验证功能
-- 支持定时任务和测试模式
-- 灵活的配置选项
+## 项目结构
 
-## 依赖要求
-
-- Python 3.x (已测试 Python 3.6+)
-- 推荐安装: requests, beautifulsoup4 (用于更可靠的HTML解析)
-- 系统 crontab (用于定时任务)
+```
+.
+├── get_github_trending.py    # GitHub Trending 爬虫核心
+├── trending_cache.py         # 缓存管理模块
+├── generate_html.py          # HTML 页面生成器
+├── mailer_core.py            # 邮件发送模块
+├── run_trending.py           # 定时任务主脚本
+├── run_trending.bat          # Windows 批处理执行脚本
+├── setup_cron.sh             # Linux/macOS cron 设置脚本
+├── mailer_config.example.json # 配置文件示例
+├── MAILER_SETUP.md           # 邮件配置详细说明
+└── WINDOWS_SCHEDULER.md      # Windows 定时任务设置指南
+```
 
 ## 快速开始
 
-### 1. 安装依赖（可选但推荐）
+### 1. 安装依赖
 
 ```bash
-pip install requests beautifulsoup4
+pip install aiohttp beautifulsoup4
 ```
 
-### 2. 配置邮箱信息
+### 2. 配置邮箱
 
-首先，编辑 `config.json` 文件，填入您的邮箱信息：
+复制配置文件并修改：
+
+```bash
+cp mailer_config.example.json mailer_config.json
+```
+
+编辑 `mailer_config.json`：
 
 ```json
 {
-    "sender_email": "your_email@provider.com",
-    "sender_password": "your_app_password_or_auth_code",
-    "receiver_email": "recipient@provider.com"
+  "smtp_provider": "qq",
+  "username": "your-email@qq.com",
+  "password": "your-smtp-auth-code",
+  "from_email": "your-email@qq.com",
+  "to_emails": "recipient@example.com",
+  "subject": "GitHub Trending 日报"
 }
 ```
 
-**重要提示 - 关于密码：**
-- **Gmail**: 使用应用专用密码（非账户密码）- 访问 https://myaccount.google.com/apppasswords
-- **QQ邮箱**: 使用授权码（非QQ密码）- 在邮箱设置中开启SMTP并获取授权码
-- **163邮箱**: 使用客户端授权密码（非账户密码）- 在邮箱设置中开启SMTP服务
-- **其他邮箱**: 使用对应的SMTP授权码
-
-### 3. 使用 Dify 报告发送邮件（推荐）
-
-如果你已经在 Dify 中搭好了一个 Workflow（例如：获取 GitHub Trending + 抖音热点，用 LLM 生成 HTML 报告），可以直接用本项目的 `dify_report_emailer.py` 来发送这份 HTML 报告：
-
-1. 配置环境变量（建议放到 shell 或系统环境里）：
+### 3. 测试运行
 
 ```bash
-export DIFY_API_KEY="your_dify_api_key"
-export DIFY_WORKFLOW_ID="your_workflow_id"
-export DIFY_BASE_URL="https://api.dify.ai"  # 可选，默认即为此
+# 完整流程：爬取 + 生成 HTML + 发送邮件
+python run_trending.py --config mailer_config.json
+
+# 仅爬取数据（不发送邮件）
+python run_trending.py --skip-email
+
+# 仅发送邮件（使用现有缓存）
+python run_trending.py --email-only
 ```
 
-2. 运行一次：
+## 命令行参数
+
+| 参数 | 说明 |
+|------|------|
+| `--config, -c` | 配置文件路径（默认：mailer_config.json） |
+| `--top-k, -k` | 获取 trending top N 仓库（默认：20） |
+| `--skip-fetch` | 跳过爬取步骤（使用现有缓存） |
+| `--skip-email` | 跳过邮件发送步骤 |
+| `--email-only` | 仅发送邮件（不爬取，不生成 HTML） |
+
+## 设置定时任务
+
+### Windows
+
+1. 参考 [WINDOWS_SCHEDULER.md](WINDOWS_SCHEDULER.md)
+2. 使用任务计划程序每天固定时间执行 `run_trending.bat`
+
+### Linux/macOS
 
 ```bash
-python dify_report_emailer.py
+# 运行设置脚本
+bash setup_cron.sh
 ```
 
-3. 测试模式（仅生成 HTML 文件 `test_email_dify.html`，不发送邮件）：
+或使用环境变量方式：
 
 ```bash
-python dify_report_emailer.py --test
-```
+# 设置环境变量
+export SMTP_USERNAME="your-email@qq.com"
+export SMTP_PASSWORD="your-auth-code"
+export TO_EMAILS="recipient@example.com"
 
-4. 定时执行（按 `config.json` 中的 `schedule_time` 每天发送 Dify 报告）：
-
-```bash
-python dify_report_emailer.py --schedule
-```
-
-### 4. 只使用本地 GitHub Trending 版本（原有模式）
-
-在配置好邮箱后，可以先测试程序是否能正常运行：
-
-```bash
-# 立即执行一次（简化版）
-python github_trending_emailer.py
-
-# 测试模式（使用示例数据，不实际获取GitHub数据）
-python github_trending_emailer.py --test
-
-# 定时执行模式
-python github_trending_emailer.py --schedule
-```
-
-### 5. 设置系统级定时任务（crontab）
-
-运行以下命令设置每日定时推送：
-
-```bash
-./setup_cron.sh
-```
-
-这将在您的 crontab 中添加一个任务，每天上午9点自动执行。
-
-## 高级配置
-
-### 修改推送时间
-
-如果您想更改推送时间，可以直接编辑 crontab：
-
-```bash
+# 添加 cron 任务（每天 9 点执行）
 crontab -e
+# 添加：0 9 * * * cd /path/to/project && python3 run_trending.py
 ```
 
-修改时间部分。例如，`0 9 * * *` 表示每天上午9点，`30 14 * * *` 表示每天下午2点30分。
+## 邮件服务商配置
 
-### 查看日志
-
-定时任务的输出会被记录到 `logs/` 目录下的日志文件中：
-
-```bash
-tail -f logs/github_trending_*.log
-```
-
-### 配置选项
-
-在 `config.json` 中可以设置以下选项：
+### QQ 邮箱
 
 ```json
 {
-    "sender_email": "your_email@provider.com",
-    "sender_password": "your_app_password_or_auth_code",
-    "receiver_email": "recipient@provider.com",
-    "schedule_time": "09:00",           // 推送时间 (HH:MM 格式)
-    "trending_language": "",            // 特定编程语言 (空字符串表示所有语言)
-    "trending_since": "daily",          // 时间范围 (daily, weekly, monthly)
-    "max_repos": 10,                    // 最大仓库数量
-    "retry_attempts": 3,                // 获取数据失败时重试次数
-    "retry_delay": 5,                   // 重试间隔(秒)
-    "cache_enabled": true,              // 是否启用缓存
-    "cache_duration_hours": 1,          // 缓存有效期(小时)
-    "log_level": "INFO"                 // 日志级别 (DEBUG, INFO, WARNING, ERROR)
+  "smtp_provider": "qq",
+  "smtp_server": "smtp.qq.com",
+  "smtp_port": 465,
+  "username": "your-email@qq.com",
+  "password": "your-smtp-auth-code"
 }
 ```
 
-## 支持的邮箱提供商
+> 注意：需要在邮箱设置中开启 SMTP 服务并获取授权码
 
-程序自动检测邮箱域名并使用相应的SMTP服务器：
-- Gmail: `smtp.gmail.com`
-- QQ邮箱: `smtp.qq.com`
-- 163邮箱: `smtp.163.com`
-- 126邮箱: `smtp.126.com`
-- Outlook/Hotmail: `smtp-mail.outlook.com`
-- 其他邮箱: 自动尝试通用配置
+### 163 邮箱
 
-## 注意事项
+```json
+{
+  "smtp_provider": "163",
+  "smtp_server": "smtp.163.com",
+  "smtp_port": 465,
+  "username": "your-email@163.com",
+  "password": "your-smtp-auth-code"
+}
+```
 
-1. 该程序优先使用 requests + BeautifulSoup 获取 GitHub 数据，若未安装则回退到 curl
-2. 请确保网络连接正常，以便访问 GitHub
-3. 为避免被反爬虫机制限制，程序默认每天只执行一次
-4. 邮箱的用户名和密码存储在本地配置文件中，请注意保护文件安全
-5. **重要**: 必须使用邮箱提供商的SMTP授权码，而不是常规登录密码
-6. 程序具备缓存机制，可在短时间内避免重复请求
+### Gmail
 
-## 故障排除
+```json
+{
+  "smtp_provider": "gmail",
+  "smtp_server": "smtp.gmail.com",
+  "smtp_port": 587,
+  "username": "your-email@gmail.com",
+  "password": "your-app-password"
+}
+```
 
-### 邮件发送失败
-- 检查 `config.json` 中的邮箱配置是否正确
-- 确认使用的是SMTP授权码而非登录密码
-- 检查邮箱的SMTP服务是否已开启
+### Outlook/Office365
 
-### 无法获取 GitHub 数据
-- 确认系统中安装了 curl 或 requests + BeautifulSoup
-- 检查网络连接是否正常
-- 检查 GitHub 是否被防火墙限制
+```json
+{
+  "smtp_provider": "outlook",
+  "smtp_server": "smtp.office365.com",
+  "smtp_port": 587,
+  "username": "your-email@outlook.com",
+  "password": "your-password"
+}
+```
 
-### 定时任务不执行
-- 检查 crontab 配置 (`crontab -l`)
-- 查看日志文件 (`logs/github_trending_*.log`) 了解错误信息
+详细配置说明见 [MAILER_SETUP.md](MAILER_SETUP.md)
 
-### 常见错误 `(535, b'5.7.8 Username and Password not accepted')`
-- 这通常表示使用了账户登录密码而非SMTP授权码
-- 请获取并使用相应邮箱提供商的SMTP授权码
+## 模块说明
 
-## 依赖项
+### TrendingCache (缓存管理)
 
-- Python 3.x
-- 标准库: smtplib, email, subprocess, json, datetime, ssl, re, logging, argparse, pathlib
-- 推荐库: requests, beautifulsoup4 (用于更可靠的HTML解析)
-- 系统工具: curl (备选方案)
+```python
+from trending_cache import TrendingCache
 
-## 自定义
+cache = TrendingCache()
 
-您可以修改程序中的以下参数：
-- 推送时间：通过配置文件或 crontab 配置
-- 项目数量：通过配置文件设置
-- 邮件格式：修改 HTML 模板部分
-- 获取策略：选择 requests + BeautifulSoup 或 curl 方案
+# 检查是否需要更新
+if cache.should_update():
+    # 获取新数据并保存
+    cache.save(repos)
+
+# 加载今天的数据
+data = cache.load_today()
+
+# 加载最新数据（今天或昨天）
+data = cache.load_latest()
+
+# 获取缓存信息
+info = cache.get_cache_info()
+
+# 清理旧缓存（保留最近 7 天）
+cache.cleanup_old_cache(keep_days=7)
+```
+
+### GitHubTrendingScraper (爬虫)
+
+```python
+from get_github_trending import GitHubTrendingScraper
+
+# 创建爬虫（默认启用缓存）
+scraper = GitHubTrendingScraper(cache_enabled=True)
+
+# 爬取数据
+repos = await scraper.scrape(top_k=10, since='daily')
+
+# 强制更新缓存
+repos = await scraper.scrape(top_k=10, force_update=True)
+
+# 禁用缓存
+scraper = GitHubTrendingScraper(cache_enabled=False)
+```
+
+### TrendingMailer (邮件发送)
+
+```python
+from mailer_core import TrendingMailer
+
+mailer = TrendingMailer(
+    smtp_server="smtp.qq.com",
+    smtp_port=465,
+    username="your-email@qq.com",
+    password="your-auth-code",
+    from_email="your-email@qq.com",
+    to_emails=["recipient1@example.com", "recipient2@example.com"]
+)
+
+# 发送邮件（自动读取今天的 HTML）
+mailer.send()
+
+# 或指定 HTML 内容
+mailer.send(html_content=html_string)
+```
+
+## 环境变量
+
+也可以使用环境变量代替配置文件：
+
+```bash
+SMTP_SERVER=smtp.qq.com
+SMTP_PORT=465
+SMTP_USERNAME=your-email@qq.com
+SMTP_PASSWORD=your-auth-code
+FROM_EMAIL=your-email@qq.com
+TO_EMAILS=recipient1@example.com,recipient2@example.com
+```
+
+## 输出示例
+
+### 缓存文件 (cache/github_trending_YYYYMMDD.json)
+
+```json
+{
+  "cache_date": "20260319",
+  "created_at": "2026-03-19T22:10:06.422598",
+  "repositories": [
+    {
+      "rank": 1,
+      "name": "owner/repo",
+      "url": "https://github.com/owner/repo",
+      "description": "项目描述",
+      "language": "Python",
+      "total_stars": "10,234",
+      "stars_today": "1,234 stars today",
+      "zread_link": "https://zread.ai/owner/repo"
+    }
+  ]
+}
+```
+
+### HTML 输出目录 (html/)
+
+- `trending_YYYYMMDD.html` - 每日 Trending 页面
+- 自动清理 30 天前的旧文件
+
+## 日志
+
+日志文件位置：`logs/cron.log`
+
+查看日志：
+```bash
+# Linux/macOS
+tail -f logs/cron.log
+
+# Windows
+Get-Content logs\cron.log -Tail 50 -Wait
+```
+
+## 常见问题
+
+### 1. SMTP 认证失败
+
+- 确认使用的是 SMTP 授权码，不是登录密码
+- 检查邮箱是否开启了 SMTP 服务
+
+### 2. 邮件进入垃圾箱
+
+- 将发件人邮箱添加到联系人
+- 使用主流邮箱服务商（QQ、163、Gmail 等）
+
+### 3. 爬虫失败
+
+- 检查网络连接
+- GitHub 页面结构可能变化，需要更新解析逻辑
+
+## License
+
+MIT

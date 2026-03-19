@@ -1,270 +1,274 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-通用邮件发送与配置模块
-
-提供：
-- DEFAULT_CONFIG：基础配置项（邮箱、调度、重试等）
-- ConfigManager：加载/校验配置
-- EmailSender：根据邮箱域名自动选择 SMTP 并发送 HTML 邮件
-- Scheduler：简单的每日定时调度器
-- logger：统一日志实例
+邮件发送核心模块
+发送 GitHub Trending HTML 内容到指定邮箱
 """
 
-import json
-import logging
 import smtplib
-import ssl
-import time
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Dict, Optional, Callable
-
-DEFAULT_CONFIG: Dict = {
-    "sender_email": "",
-    "sender_password": "",
-    "receiver_email": "",
-    "schedule_time": "09:00",
-    "trending_language": "",
-    "trending_since": "daily",
-    "max_repos": 10,
-    "retry_attempts": 3,
-    "retry_delay": 5,
-    "cache_enabled": True,
-    "cache_duration_hours": 1,
-    "log_level": "INFO",
-}
-
-SMTP_CONFIGS: Dict = {
-    "gmail.com": {"server": "smtp.gmail.com", "port": 587, "use_ssl": False},
-    "qq.com": {"server": "smtp.qq.com", "port": 587, "use_ssl": False},
-    "foxmail.com": {"server": "smtp.qq.com", "port": 587, "use_ssl": False},
-    "163.com": {"server": "smtp.163.com", "port": 465, "use_ssl": True},
-    "126.com": {"server": "smtp.126.com", "port": 465, "use_ssl": True},
-    "sina.com": {"server": "smtp.sina.com", "port": 587, "use_ssl": False},
-    "sina.cn": {"server": "smtp.sina.com", "port": 587, "use_ssl": False},
-    "sohu.com": {"server": "smtp.sohu.com", "port": 25, "use_ssl": False},
-    "hotmail.com": {"server": "smtp-mail.outlook.com", "port": 587, "use_ssl": False},
-    "outlook.com": {"server": "smtp-mail.outlook.com", "port": 587, "use_ssl": False},
-    "live.com": {"server": "smtp-mail.outlook.com", "port": 587, "use_ssl": False},
-}
+import os
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.header import Header
+from datetime import date
+from typing import List, Optional
+import glob
 
 
-def setup_logger(log_level: str = "INFO") -> logging.Logger:
-    """配置并返回全局 logger。"""
-    logger = logging.getLogger("GitHubTrending")
-    logger.setLevel(getattr(logging, log_level.upper(), logging.INFO))
-
-    if logger.handlers:
-        return logger
-
-    log_dir = Path("logs")
-    log_dir.mkdir(exist_ok=True)
-
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.DEBUG)
-
-    file_handler = logging.FileHandler(
-        log_dir / f"github_trending_{datetime.now().strftime('%Y%m')}.log",
-        encoding="utf-8",
-    )
-    file_handler.setLevel(logging.DEBUG)
-
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
-    console_handler.setFormatter(formatter)
-    file_handler.setFormatter(formatter)
-
-    logger.addHandler(console_handler)
-    logger.addHandler(file_handler)
-    return logger
-
-
-logger = setup_logger()
-
-
-class ConfigManager:
-    """配置管理器，支持自定义默认配置（用于不同入口脚本扩展字段）。"""
+class TrendingMailer:
+    """GitHub Trending 邮件发送器"""
 
     def __init__(
         self,
-        config_path: str = "config.json",
-        default_config: Optional[Dict] = None,
+        smtp_server: str,
+        smtp_port: int,
+        username: str,
+        password: str,
+        from_email: str,
+        to_emails: List[str],
+        use_ssl: bool = True,
+        use_tls: bool = True
     ):
-        self.config_path = Path(config_path)
-        self.default_config = (default_config or DEFAULT_CONFIG).copy()
-        self.config: Dict = self._load_config()
+        """
+        初始化邮件发送器
 
-    def _load_config(self) -> Dict:
-        """加载配置文件并与默认配置合并。"""
-        if not self.config_path.exists():
-            logger.warning(f"配置文件不存在: {self.config_path}")
-            self._create_default_config()
-            return self.default_config.copy()
+        Args:
+            smtp_server: SMTP 服务器地址
+            smtp_port: SMTP 端口
+            username: SMTP 用户名
+            password: SMTP 密码（或授权码）
+            from_email: 发件人邮箱
+            to_emails: 收件人邮箱列表
+            use_ssl: 是否使用 SSL
+            use_tls: 是否使用 TLS
+        """
+        self.smtp_server = smtp_server
+        self.smtp_port = smtp_port
+        self.username = username
+        self.password = password
+        self.from_email = from_email
+        self.to_emails = to_emails
+        self.use_ssl = use_ssl
+        self.use_tls = use_tls
 
-        try:
-            with open(self.config_path, "r", encoding="utf-8") as f:
-                config = json.load(f)
+    def _get_today_html(self, html_dir: str = "html") -> Optional[tuple]:
+        """
+        获取今天的 HTML 文件内容
 
-            merged = self.default_config.copy()
-            merged.update(config)
-            logger.info(f"成功加载配置文件: {self.config_path}")
-            return merged
-        except json.JSONDecodeError as e:
-            logger.error(f"配置文件格式错误: {e}")
-            return self.default_config.copy()
-        except Exception as e:
-            logger.error(f"加载配置文件失败: {e}")
-            return self.default_config.copy()
+        Args:
+            html_dir: HTML 文件目录
 
-    def _create_default_config(self) -> None:
-        """创建默认配置文件。"""
-        try:
-            with open(self.config_path, "w", encoding="utf-8") as f:
-                json.dump(self.default_config, f, indent=4, ensure_ascii=False)
-            logger.info(f"已创建默认配置文件: {self.config_path}")
-            logger.info("请编辑配置文件并填入您的邮箱信息")
-        except Exception as e:
-            logger.error(f"创建配置文件失败: {e}")
+        Returns:
+            (html_content, file_path) 元组，如果文件不存在则返回 None
+        """
+        today = date.today().strftime("%Y%m%d")
+        html_file = os.path.join(html_dir, f"trending_{today}.html")
 
-    def validate(self) -> bool:
-        """验证邮箱配置是否完整、格式是否正确。"""
-        if not self.config.get("sender_email"):
-            logger.error("未配置发件人邮箱 (sender_email)")
-            return False
-
-        if not self.config.get("sender_password"):
-            logger.error("未配置发件人密码 (sender_password)")
-            return False
-
-        import re
-
-        email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-        if not re.match(email_pattern, self.config["sender_email"]):
-            logger.error(f"发件人邮箱格式不正确: {self.config['sender_email']}")
-            return False
-
-        if not self.config.get("receiver_email"):
-            self.config["receiver_email"] = self.config["sender_email"]
-            logger.info("未配置收件人邮箱，将发送给发件人自己")
-
-        logger.info("配置验证通过")
-        return True
-
-    def get(self, key: str, default=None):
-        return self.config.get(key, default)
-
-
-class EmailSender:
-    """基于配置自动选择 SMTP 并发送 HTML 邮件。"""
-
-    def __init__(self, config: ConfigManager):
-        self.config = config
-
-    def send(self, subject: str, html_content: str) -> bool:
-        sender_email = self.config.get("sender_email")
-        sender_password = self.config.get("sender_password")
-        receiver_email = self.config.get("receiver_email", sender_email)
-
-        try:
-            from email.mime.multipart import MIMEMultipart
-            from email.mime.text import MIMEText
-
-            msg = MIMEMultipart("alternative")
-            msg["Subject"] = subject
-            msg["From"] = sender_email
-            msg["To"] = receiver_email
-
-            html_part = MIMEText(html_content, "html", "utf-8")
-            msg.attach(html_part)
-
-            smtp_config = self._get_smtp_config(sender_email)
-            logger.info(
-                f"使用SMTP服务器: {smtp_config['server']}:{smtp_config['port']}"
-            )
-
-            if smtp_config["use_ssl"]:
-                self._send_with_ssl(
-                    smtp_config, sender_email, sender_password, receiver_email, msg
-                )
+        if not os.path.exists(html_file):
+            # 尝试获取最新的 HTML 文件
+            html_files = glob.glob(os.path.join(html_dir, "trending_*.html"))
+            if html_files:
+                html_file = max(html_files, key=os.path.getmtime)
+                print(f"[INFO] 今天 HTML 不存在，使用最新文件：{html_file}")
             else:
-                self._send_with_tls(
-                    smtp_config, sender_email, sender_password, receiver_email, msg
-                )
+                print(f"[WARN] HTML 文件不存在：{html_file}")
+                return None
 
-            logger.info(f"邮件已成功发送至: {receiver_email}")
+        try:
+            with open(html_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            print(f"[OK] 已读取 HTML: {html_file}")
+            return (content, html_file)
+        except IOError as e:
+            print(f"[ERROR] 读取 HTML 失败：{e}")
+            return None
+
+    def _create_message(self, html_content: str, subject: str = None) -> MIMEMultipart:
+        """
+        创建邮件消息
+
+        Args:
+            html_content: HTML 内容
+            subject: 邮件主题
+
+        Returns:
+            MIMEMultipart 消息对象
+        """
+        if subject is None:
+            today = date.today().strftime("%Y-%m-%d")
+            subject = f"🔥 GitHub Trending | {today}"
+
+        msg = MIMEMultipart("alternative")
+        msg["From"] = self.from_email
+        msg["To"] = ", ".join(self.to_emails)
+        msg["Subject"] = Header(subject, "utf-8")
+
+        # 添加纯文本版本（兼容性）
+        text_content = f"GitHub Trending - {date.today().strftime('%Y-%m-%d')}"
+        msg.attach(MIMEText(text_content, "plain", "utf-8"))
+
+        # 添加 HTML 版本（主要内容）
+        msg.attach(MIMEText(html_content, "html", "utf-8"))
+
+        return msg
+
+    def send(
+        self,
+        html_content: str = None,
+        subject: str = None,
+        html_dir: str = "html"
+    ) -> bool:
+        """
+        发送邮件
+
+        Args:
+            html_content: HTML 内容，如果为 None 则自动读取今天的文件
+            subject: 邮件主题
+            html_dir: HTML 文件目录
+
+        Returns:
+            True 表示发送成功，False 表示失败
+        """
+        # 获取 HTML 内容
+        if html_content is None:
+            result = self._get_today_html(html_dir)
+            if result is None:
+                return False
+            html_content, _ = result
+
+        # 创建邮件
+        msg = self._create_message(html_content, subject)
+
+        try:
+            # 连接 SMTP 服务器
+            if self.use_ssl:
+                server = smtplib.SMTP_SSL(self.smtp_server, self.smtp_port)
+            else:
+                server = smtplib.SMTP(self.smtp_server, self.smtp_port)
+
+            with server:
+                # 启用 TLS
+                if not self.use_ssl and self.use_tls:
+                    server.starttls()
+
+                # 登录
+                if self.username and self.password:
+                    server.login(self.username, self.password)
+
+                # 发送邮件
+                server.sendmail(self.from_email, self.to_emails, msg.as_string())
+
+            print(f"[OK] 邮件已发送至：{', '.join(self.to_emails)}")
             return True
+
+        except smtplib.SMTPAuthenticationError:
+            print("[ERROR] SMTP 认证失败，请检查用户名和密码")
+            return False
+        except smtplib.SMTPConnectError:
+            print(f"[ERROR] 无法连接 SMTP 服务器：{self.smtp_server}:{self.smtp_port}")
+            return False
         except Exception as e:
-            logger.error(f"发送邮件失败: {e}", exc_info=True)
+            print(f"[ERROR] 发送邮件失败：{e}")
             return False
 
-    def _get_smtp_config(self, email: str) -> Dict:
-        domain = email.split("@")[1].lower()
-        if domain in SMTP_CONFIGS:
-            return SMTP_CONFIGS[domain]
-        logger.warning(f"未知邮箱提供商 ({domain})，使用Gmail SMTP")
-        return {"server": "smtp.gmail.com", "port": 587, "use_ssl": False}
 
-    def _send_with_ssl(
-        self,
-        smtp_config: Dict,
-        sender: str,
-        password: str,
-        receiver: str,
-        msg,
-    ) -> None:
-        context = ssl.create_default_context()
-        with smtplib.SMTP_SSL(
-            smtp_config["server"], smtp_config["port"], context=context
-        ) as server:
-            server.login(sender, password)
-            server.sendmail(sender, receiver, msg.as_string())
+def send_trending_email(
+    smtp_server: str,
+    smtp_port: int,
+    username: str,
+    password: str,
+    from_email: str,
+    to_emails: List[str],
+    subject: str = None,
+    html_dir: str = "html"
+) -> bool:
+    """
+    便捷函数：发送 GitHub Trending 邮件
 
-    def _send_with_tls(
-        self,
-        smtp_config: Dict,
-        sender: str,
-        password: str,
-        receiver: str,
-        msg,
-    ) -> None:
-        context = ssl.create_default_context()
-        with smtplib.SMTP(smtp_config["server"], smtp_config["port"]) as server:
-            if smtp_config["port"] != 25:
-                server.starttls(context=context)
-            server.ehlo()
-            server.login(sender, password)
-            server.sendmail(sender, receiver, msg.as_string())
+    Args:
+        smtp_server: SMTP 服务器地址
+        smtp_port: SMTP 端口
+        username: SMTP 用户名
+        password: SMTP 密码
+        from_email: 发件人邮箱
+        to_emails: 收件人邮箱列表
+        subject: 邮件主题
+        html_dir: HTML 文件目录
+
+    Returns:
+        True 表示发送成功
+    """
+    mailer = TrendingMailer(
+        smtp_server=smtp_server,
+        smtp_port=smtp_port,
+        username=username,
+        password=password,
+        from_email=from_email,
+        to_emails=to_emails
+    )
+    return mailer.send(subject=subject, html_dir=html_dir)
 
 
-class Scheduler:
-    """简单的每日定时调度器，基于配置项 schedule_time。"""
+# 示例配置（常见邮箱 SMTP 服务器）
+SMTP_CONFIGS = {
+    "qq": {
+        "server": "smtp.qq.com",
+        "port": 465,
+        "use_ssl": True
+    },
+    "163": {
+        "server": "smtp.163.com",
+        "port": 465,
+        "use_ssl": True
+    },
+    "gmail": {
+        "server": "smtp.gmail.com",
+        "port": 587,
+        "use_ssl": False,
+        "use_tls": True
+    },
+    "outlook": {
+        "server": "smtp.office365.com",
+        "port": 587,
+        "use_ssl": False,
+        "use_tls": True
+    }
+}
 
-    def __init__(self, config: ConfigManager):
-        self.config = config
 
-    def run(self, task_func: Callable[[], bool]) -> None:
-        schedule_time = self.config.get("schedule_time", "09:00")
-        logger.info(f"定时任务已启动，将在每天 {schedule_time} 执行")
+if __name__ == "__main__":
+    # 示例：从环境变量读取配置并发送邮件
+    # 或者在这里直接配置
 
-        while True:
-            now = datetime.now()
-            target_hour, target_minute = map(int, schedule_time.split(":"))
+    # 从环境变量读取（推荐方式）
+    smtp_server = os.getenv("SMTP_SERVER", "smtp.qq.com")
+    smtp_port = int(os.getenv("SMTP_PORT", "465"))
+    username = os.getenv("SMTP_USERNAME")
+    password = os.getenv("SMTP_PASSWORD")
+    from_email = os.getenv("FROM_EMAIL", username)
+    to_emails_str = os.getenv("TO_EMAILS", "")
 
-            if now.hour == target_hour and now.minute < target_minute + 2:
-                if now.minute >= target_minute:
-                    logger.info(
-                        f"开始执行定时任务: {now.strftime('%Y-%m-%d %H:%M:%S')}"
-                    )
-                    try:
-                        task_func()
-                    except Exception as e:
-                        logger.error("定时任务执行失败: %s", e, exc_info=True)
+    if not username or not password or not to_emails_str:
+        print("[ERROR] 请设置以下环境变量:")
+        print("  SMTP_USERNAME - SMTP 用户名")
+        print("  SMTP_PASSWORD - SMTP 密码/授权码")
+        print("  TO_EMAILS - 收件人邮箱列表（逗号分隔）")
+        print("  FROM_EMAIL - 发件人邮箱（可选，默认同用户名）")
+        exit(1)
 
-                    logger.info("任务执行完毕，等待下一次执行时间...")
-                    time.sleep(300)
+    to_emails = [email.strip() for email in to_emails_str.split(",")]
 
-            time.sleep(30)
+    # 发送邮件
+    success = send_trending_email(
+        smtp_server=smtp_server,
+        smtp_port=smtp_port,
+        username=username,
+        password=password,
+        from_email=from_email,
+        to_emails=to_emails
+    )
 
+    if success:
+        print("[OK] 邮件发送成功!")
+    else:
+        print("[ERROR] 邮件发送失败!")
+        exit(1)

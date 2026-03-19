@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GitHub Trending | 2026-03-19</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0d1117;
+            --card: #161b22;
+            --border: #30363d;
+            --text: #c9d1d9;
+            --text-dim: #8b949e;
+            --blue: #58a6ff;
+            --green: #238636;
+            --orange: #f0883e;
+            --fire: #ff7b72;
+        }
+
+        body {
+            font-family: -apple-system, system-ui, "Helvetica Neue", sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 16px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: var(--blue);
+            margin-bottom: 8px;
+        }
+
+        .cache-info {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 16px;
+            display: block;
+            transition: all 0.2s;
+        }
+
+        .card:active {
+            transform: scale(0.98);
+            border-color: var(--blue);
+        }
+
+        .rank-badge {
+            display: inline-block;
+            background: var(--border);
+            color: var(--orange);
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .repo-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--blue);
+            text-decoration: none;
+            display: block;
+            margin-bottom: 8px;
+            word-break: break-word;
+            transition: color 0.2s;
+        }
+
+        .repo-name:active {
+            color: var(--green);
+        }
+
+        .desc {
+            font-size: 0.95rem;
+            color: var(--text);
+            line-height: 1.5;
+            margin-bottom: 12px;
+            word-break: break-word;
+        }
+
+        .meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        .lang {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .lang-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .stars-today {
+            color: var(--fire);
+            font-weight: bold;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            flex: 1;
+            min-width: 80px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.85rem;
+            text-align: center;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        .btn-gh {
+            background: var(--border);
+            color: var(--text);
+            border-color: var(--blue);
+        }
+
+        .btn-gh:active {
+            background: var(--blue);
+            color: var(--bg);
+        }
+
+        .btn-z {
+            background: var(--green);
+            color: white;
+        }
+
+        .btn-z:active {
+            opacity: 0.8;
+        }
+
+        .btn-copy {
+            background: var(--green);
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-copy.copied {
+            background: var(--blue);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--card);
+            border: 1px solid var(--blue);
+            color: var(--text);
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        .footer-info {
+            text-align: center;
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        @media (max-width: 480px) {
+            body { padding: 12px; }
+            h1 { font-size: 1.5rem; }
+            .card { padding: 12px; }
+            .repo-name { font-size: 1rem; }
+            .desc { font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🔥 GitHub Trending</h1>
+        <div class="cache-info">📅 2026-03-19 | ✅ 已生成：2026-03-19 22:10</div>
+    </header>
+
+    <div class="grid">
+        
+        <!-- #1 -->
+        <div class="card">
+            <div class="rank-badge">#1</div>
+            <a href="https://github.com/opendataloader-project/opendataloader-pdf" class="repo-name" target="_blank">opendataloader-project/opendataloader-pdf</a>
+            <p class="desc">PDF Parser for AI-ready data. Automate PDF accessibility. Open-source.</p>
+            <div class="meta">
+                <span class="lang"><span class="lang-dot" style="background: #b07219;"></span> Java</span>
+                <span class="stars">⭐ 4,950</span>
+                <span class="stars-today">🔥 1,394</span>
+            </div>
+            <div class="buttons">
+                <a href="https://github.com/opendataloader-project/opendataloader-pdf" class="btn btn-gh" target="_blank">GitHub</a>
+                <a href="https://zread.ai/opendataloader-project/opendataloader-pdf" class="btn btn-z" target="_blank">Z-Read</a>
+            </div>
+        </div>
+
+        <!-- #2 -->
+        <div class="card">
+            <div class="rank-badge">#2</div>
+            <a href="https://github.com/langchain-ai/open-swe" class="repo-name" target="_blank">langchain-ai/open-swe</a>
+            <p class="desc">An Open-Source Asynchronous Coding Agent</p>
+            <div class="meta">
+                <span class="lang"><span class="lang-dot" style="background: #3776ab;"></span> Python</span>
+                <span class="stars">⭐ 6,810</span>
+                <span class="stars-today">🔥 955</span>
+            </div>
+            <div class="buttons">
+                <a href="https://github.com/langchain-ai/open-swe" class="btn btn-gh" target="_blank">GitHub</a>
+                <a href="https://zread.ai/langchain-ai/open-swe" class="btn btn-z" target="_blank">Z-Read</a>
+            </div>
+        </div>
+
+        <!-- #3 -->
+        <div class="card">
+            <div class="rank-badge">#3</div>
+            <a href="https://github.com/obra/superpowers" class="repo-name" target="_blank">obra/superpowers</a>
+            <p class="desc">An agentic skills framework & software development methodology that works.</p>
+            <div class="meta">
+                <span class="lang"><span class="lang-dot" style="background: #89e051;"></span> Shell</span>
+                <span class="stars">⭐ 98,223</span>
+                <span class="stars-today">🔥 3,476</span>
+            </div>
+            <div class="buttons">
+                <a href="https://github.com/obra/superpowers" class="btn btn-gh" target="_blank">GitHub</a>
+                <a href="https://zread.ai/obra/superpowers" class="btn btn-z" target="_blank">Z-Read</a>
+            </div>
+        </div>
+
+        <!-- #4 -->
+        <div class="card">
+            <div class="rank-badge">#4</div>
+            <a href="https://github.com/jarrodwatts/claude-hud" class="repo-name" target="_blank">jarrodwatts/claude-hud</a>
+            <p class="desc">A Claude Code plugin that shows what's happening - context usage, active tools, running agents, and todo progress</p>
+            <div class="meta">
+                <span class="lang"><span class="lang-dot" style="background: #f1e05a;"></span> JavaScript</span>
+                <span class="stars">⭐ 8,113</span>
+                <span class="stars-today">🔥 1,851</span>
+            </div>
+            <div class="buttons">
+                <a href="https://github.com/jarrodwatts/claude-hud" class="btn btn-gh" target="_blank">GitHub</a>
+                <a href="https://zread.ai/jarrodwatts/claude-hud" class="btn btn-z" target="_blank">Z-Read</a>
+            </div>
+        </div>
+
+        <!-- #5 -->
+        <div class="card">
+            <div class="rank-badge">#5</div>
+            <a href="https://github.com/unslothai/unsloth" class="repo-name" target="_blank">unslothai/unsloth</a>
+            <p class="desc">Unified web UI for training and running open models like Qwen, DeepSeek, gpt-oss and Gemma locally.</p>
+            <div class="meta">
+                <span class="lang"><span class="lang-dot" style="background: #3776ab;"></span> Python</span>
+                <span class="stars">⭐ 56,405</span>
+                <span class="stars-today">🔥 1,259</span>
+            </div>
+            <div class="buttons">
+                <a href="https://github.com/unslothai/unsloth" class="btn btn-gh" target="_blank">GitHub</a>
+                <a href="https://zread.ai/unslothai/unsloth" class="btn btn-z" target="_blank">Z-Read</a>
+            </div>
+        </div>
+
+        <!-- #6 -->
+        <div class="card">
+            <div class="rank-badge">#6</div>
+            <a href="https://github.com/mobile-dev-inc/Maestro" class="repo-name" target="_blank">mobile-dev-inc/Maestro</a>
+            <p class="desc">Painless E2E Automation for Mobile and Web</p>
+            <div class="meta">
+                <span class="lang"><span class="lang-dot" style="background: #A97BFF;"></span> Kotlin</span>
+                <span class="stars">⭐ 12,227</span>
+                <span class="stars-today">🔥 469</span>
+            </div>
+            <div class="buttons">
+                <a href="https://github.com/mobile-dev-inc/Maestro" class="btn btn-gh" target="_blank">GitHub</a>
+                <a href="https://zread.ai/mobile-dev-inc/Maestro" class="btn btn-z" target="_blank">Z-Read</a>
+            </div>
+        </div>
+
+        <!-- #7 -->
+        <div class="card">
+            <div class="rank-badge">#7</div>
+            <a href="https://github.com/newton-physics/newton" class="repo-name" target="_blank">newton-physics/newton</a>
+            <p class="desc">An open-source, GPU-accelerated physics simulation engine built upon NVIDIA Warp, specifically targeting roboticists and simulation researchers.</p>
+            <div class="meta">
+                <span class="lang"><span class="lang-dot" style="background: #3776ab;"></span> Python</span>
+                <span class="stars">⭐ 3,109</span>
+                <span class="stars-today">🔥 345</span>
+            </div>
+            <div class="buttons">
+                <a href="https://github.com/newton-physics/newton" class="btn btn-gh" target="_blank">GitHub</a>
+                <a href="https://zread.ai/newton-physics/newton" class="btn btn-z" target="_blank">Z-Read</a>
+            </div>
+        </div>
+
+        <!-- #8 -->
+        <div class="card">
+            <div class="rank-badge">#8</div>
+            <a href="https://github.com/louis-e/arnis" class="repo-name" target="_blank">louis-e/arnis</a>
+            <p class="desc">Generate any location from the real world in Minecraft with a high level of detail.</p>
+            <div class="meta">
+                <span class="lang"><span class="lang-dot" style="background: #cea617;"></span> Rust</span>
+                <span class="stars">⭐ 10,304</span>
+                <span class="stars-today">🔥 918</span>
+            </div>
+            <div class="buttons">
+                <a href="https://github.com/louis-e/arnis" class="btn btn-gh" target="_blank">GitHub</a>
+                <a href="https://zread.ai/louis-e/arnis" class="btn btn-z" target="_blank">Z-Read</a>
+            </div>
+        </div>
+
+        <!-- #9 -->
+        <div class="card">
+            <div class="rank-badge">#9</div>
+            <a href="https://github.com/FujiwaraChoki/MoneyPrinterV2" class="repo-name" target="_blank">FujiwaraChoki/MoneyPrinterV2</a>
+            <p class="desc">Automate the process of making money online.</p>
+            <div class="meta">
+                <span class="lang"><span class="lang-dot" style="background: #3776ab;"></span> Python</span>
+                <span class="stars">⭐ 15,772</span>
+                <span class="stars-today">🔥 560</span>
+            </div>
+            <div class="buttons">
+                <a href="https://github.com/FujiwaraChoki/MoneyPrinterV2" class="btn btn-gh" target="_blank">GitHub</a>
+                <a href="https://zread.ai/FujiwaraChoki/MoneyPrinterV2" class="btn btn-z" target="_blank">Z-Read</a>
+            </div>
+        </div>
+
+        <!-- #10 -->
+        <div class="card">
+            <div class="rank-badge">#10</div>
+            <a href="https://github.com/gsd-build/get-shit-done" class="repo-name" target="_blank">gsd-build/get-shit-done</a>
+            <p class="desc">A light-weight and powerful meta-prompting, context engineering and spec-driven development system for Claude Code by TÂCHES.</p>
+            <div class="meta">
+                <span class="lang"><span class="lang-dot" style="background: #f1e05a;"></span> JavaScript</span>
+                <span class="stars">⭐ 35,500</span>
+                <span class="stars-today">🔥 1,414</span>
+            </div>
+            <div class="buttons">
+                <a href="https://github.com/gsd-build/get-shit-done" class="btn btn-gh" target="_blank">GitHub</a>
+                <a href="https://zread.ai/gsd-build/get-shit-done" class="btn btn-z" target="_blank">Z-Read</a>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="footer-info">
+        ✨ 已优化手机显示 | 支持邮件预览 | 点击项目卡片查看详情
+    </div>
+</div>
+
+<div class="toast" id="toast">链接已复制到剪贴板</div>
+
+<script>
+    function copyLink(url) {
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(url).then(function() {
+                showToast();
+            });
+        } else {
+            // 降级方案
+            var textarea = document.createElement('textarea');
+            textarea.value = url;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            showToast();
+        }
+    }
+
+    function showToast() {
+        var toast = document.getElementById('toast');
+        toast.classList.add('show');
+        setTimeout(function() {
+            toast.classList.remove('show');
+        }, 2000);
+    }
+</script>
+
+</body>
+</html>
